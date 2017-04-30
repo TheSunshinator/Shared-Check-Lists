@@ -1,0 +1,59 @@
+<resources>
+  <string name = "app_name">Shared Check List</string>
+
+  <string name = "btn_submit">Submit</string>
+
+  <string name = "err_auth"       >An authentication error occurred. Please try again.</string>
+  <string name = "err_network"    >A communication error occurred. Please try again.</string>
+  <string name = "err_save"       >An error occurred. Please try again.</string>
+
+  <string name = "warn_delete_self"       >You cannot delete yourself from the user list</string>
+  <string name = "warn_empty_item"        >Please enter something</string>
+  <string name = "warn_empty_list_choice" >You do not have any list you can choose</string>
+  <string name = "warn_empty_user"        >Please enter the email of the user you want to add</string>
+  <string name = "warn_empty_user_set"    >Please select the users you want to delete</string>
+  <string name = "warn_empty_name"        >Please enter a name</string>
+
+  <string name = "message_confirm_delete_all"    >Are you sure you want to delete all the items of the list %s? Please note that the deleted items cannot be recovered.</string>
+  <string name = "message_confirm_delete_checked">Are you sure you want to delete all the checked items of the list %s? Please note that the deleted items cannot be recovered.</string>
+  <string name = "message_confirm_delete_list"   >Are you sure you want to delete the list %s? Please note that the deleted list cannot be recovered.</string>
+  <string name = "message_confirm_delete_users"  >Are you sure you want to remove %s from accessed users?</string>
+  <string name = "message_login_network"         >The login page cannot be opened because there is no internet connectivity.</string>
+  <string name = "message_login_unknown"         >The login page cannot be opened because of an unknown error.</string>
+
+  <string name = "btn_add"           >Add</string>
+  <string name = "btn_add_items"     >Add items</string>
+  <string name = "btn_add_users"     >Add users</string>
+  <string name = "btn_delete_all"    >Clear list</string>
+  <string name = "btn_delete_checked">Delete checked</string>
+  <string name = "btn_delete_list"   >Delete list</string>
+  <string name = "btn_items"         >Items</string>
+  <string name = "btn_logout"        >Logout</string>
+  <string name = "btn_new_list"      >New list</string>
+  <string name = "btn_remove"        >Remove</string>
+  <string name = "btn_remove_users"  >Remove users</string>
+  <string name = "btn_retry"         >Retry</string>
+  <string name = "btn_select_list"   >Select list</string>
+  <string name = "btn_users"         >Users</string>
+
+  <string name = "label_add_item"    >Add items</string>
+  <string name = "label_check"       >Check items</string>
+  <string name = "label_clean"       >Clean list</string>
+  <string name = "label_add_users"   >Add users</string>
+  <string name = "label_remove_users">Remove users</string>
+  <string name = "label_delete"      >Delete list</string>
+
+  <string name = "title_new_user">Add User</string>
+
+  <string name = "answer_affirmative">Yes</string>
+  <string name = "answer_negative"   >No</string>
+
+  <string name = "drawer_opened">Menu Opened</string>
+  <string name = "drawer_closed">Menu Closed</string>
+
+  <string name = "hint_item">Item</string>
+  <string name = "hint_name">Name</string>
+
+  <string name = "desc_open_drawer" >Open drawer menu</string>
+  <string name = "desc_close_drawer">Close drawer menu</string>
+</resources>

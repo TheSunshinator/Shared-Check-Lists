@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android = "http://schemas.android.com/apk/res/android"
+              android:layout_width = "match_parent"
+              android:layout_height = "wrap_content"
+              android:orientation = "vertical">
+
+  <TextView
+    android:id = "@+id/textView2"
+    android:textStyle = "bold"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:gravity = "center"
+    android:text = "@string/title_new_user"
+    android:textSize = "24sp"/>
+
+  <EditText
+    android:id = "@+id/email_new"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "0dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:hint = "@string/email_hint"
+    android:ems="10"
+    android:inputType = "textEmailAddress"/>
+
+  <CheckBox
+    android:id = "@+id/perm_add_item"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:checked = "true"
+    android:text = "@string/label_add_item"/>
+
+  <CheckBox
+    android:id = "@+id/perm_check"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:checked = "true"
+    android:text = "@string/label_check"/>
+
+  <CheckBox
+    android:id = "@+id/perm_clean"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:text = "@string/label_clean"/>
+
+  <CheckBox
+    android:id = "@+id/perm_users_add"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:text = "@string/label_add_users"/>
+
+  <CheckBox
+    android:id = "@+id/perm_users_remove"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:text = "@string/label_remove_users"/>
+
+  <CheckBox
+    android:id = "@+id/perm_delete"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:text = "@string/label_delete"/>
+
+  <Button
+    android:id = "@+id/submit_user"
+    android:layout_width = "match_parent"
+    android:layout_height = "wrap_content"
+    android:layout_marginTop = "8dp"
+    android:layout_marginLeft = "8dp"
+    android:layout_marginRight = "8dp"
+    android:text = "@string/btn_submit"/>
+
+</LinearLayout>
