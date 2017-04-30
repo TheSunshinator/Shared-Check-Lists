@@ -296,7 +296,7 @@ public class ListFragment
 
     FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-    if ( user == null ) { return 0; }
+    if ( user == null || mCheckList == null ) { return 0; }
 
     String     email  = user.getEmail();
     UserRights rights = mCheckList.getAuthorizedUsers().get( email );
