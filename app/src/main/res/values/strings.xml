@@ -53,6 +53,7 @@
 
   <string name = "hint_item">Item</string>
   <string name = "hint_name">Name</string>
+  <string name = "hint_email">Email</string>
 
   <string name = "desc_open_drawer" >Open drawer menu</string>
   <string name = "desc_close_drawer">Close drawer menu</string>
