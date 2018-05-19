@@ -117,7 +117,6 @@ public class CheckListAdapter extends FirebaseRecyclerAdapter<CheckListEntry, Vi
     }
 
     public interface ItemClickCallback {
-
         void onItemClick(DatabaseReference ref, CheckListEntry entry);
     }
 }

@@ -104,6 +104,9 @@ public class SharedCheckList
     protected void onPause() {
         super.onPause();
         mListsQuery.removeEventListener(l_Lists);
+
+        if(mAdapter != null) mAdapter.stopListening();
+
         mCheckLists.clear();
     }
 
@@ -122,6 +125,7 @@ public class SharedCheckList
             initQuery(user);
             mListsQuery.addValueEventListener(l_Lists);
             mAdapter = new StringAdapter<>(CheckList.class, mListsQuery, l_ListSelected);
+            mAdapter.startListening();
             mvListList.setAdapter(mAdapter);
         } else {
             onUnauthenticated();
@@ -139,7 +143,6 @@ public class SharedCheckList
 
     @Override
     protected void onUnauthenticated() {
-
         mListsQuery.removeEventListener(l_Lists);
         mCheckLists.clear();
 
@@ -287,7 +290,6 @@ public class SharedCheckList
     private final ValueEventListener l_Lists = new ValueEventListener() {
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
-
             mCheckLists.clear();
 
             for (DataSnapshot list : dataSnapshot.getChildren()) {
@@ -301,8 +303,7 @@ public class SharedCheckList
             CheckList shownList = mFragment.getCheckList();
             if (mCheckLists.containsKey(listToShow)) {
                 setLayoutTo(mCheckLists.get(listToShow));
-            } else if (shownList != null
-                    && mCheckLists.containsKey(mFragment.getCheckList().getUid())) {
+            } else if (shownList != null && mCheckLists.containsKey(mFragment.getCheckList().getUid())) {
                 setLayoutTo(mCheckLists.get(mFragment.getCheckList().getUid()));
             } else if (mCheckLists.keySet().size() <= 0) {
                 setLayoutTo(null);
@@ -325,7 +326,6 @@ public class SharedCheckList
     private final ItemClickCallback l_ListSelected = new ItemClickCallback() {
         @Override
         public void onItemClick(DatabaseReference ref) {
-
             String uid = ref.getKey();
             setLayoutTo(mCheckLists.get(uid));
 

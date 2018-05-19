@@ -117,6 +117,10 @@ public class ListFragment extends Fragment {
         super.onPause();
 
         closeAllDialogs();
+
+        if(mAdapter != null) mAdapter.stopListening();
+        if(mUserAdapter != null) mUserAdapter.stopListening();
+
         mCheckList = null;
     }
 
@@ -228,14 +232,15 @@ public class ListFragment extends Fragment {
         Log.d(LOG_TAG, "setToList: " + list);
 
         if (list != null && !list.equals(mCheckList)) {
-
             mReference = FirebaseDatabase.getInstance().getReference()
                     .child(FB_KEY_APP).child(FB_KEY_LIST).child(list.getUid());
 
             mAdapter = new CheckListAdapter(mReference.child(FB_KEY_ITEMS), l_ItemClicked);
+            mAdapter.startListening();
             mvList.setAdapter(mAdapter);
 
             mUserAdapter = new UserAdapter(mReference.child(FB_KEY_USERS));
+            mUserAdapter.startListening();
             mvUserList.setAdapter(mUserAdapter);
         }
 
