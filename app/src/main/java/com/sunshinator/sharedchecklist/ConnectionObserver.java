@@ -15,8 +15,7 @@ public abstract class ConnectionObserver extends BroadcastReceiver {
     private static final String LOG_TAG = "ConnectionObserver";
 
     public static boolean isConnected(Context context) {
-        ConnectivityManager cm
-                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo ni = cm.getActiveNetworkInfo();
         return ni != null && ni.getState() == NetworkInfo.State.CONNECTED;

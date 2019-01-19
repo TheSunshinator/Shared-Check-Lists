@@ -57,7 +57,7 @@ public class CheckList {
     mName = name;
 
     mUsers = new HashMap<>();
-    final UserRights adminRights = new UserRights( email, Constants.MASK_RIGHT_ALL );
+    final UserRights adminRights = new UserRights( email, Constants.INSTANCE.getMASK_RIGHT_ALL());
     mUsers.put( adminRights.getId(), adminRights );
   }
 

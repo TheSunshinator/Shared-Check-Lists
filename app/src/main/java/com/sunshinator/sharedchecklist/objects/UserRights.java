@@ -16,14 +16,14 @@ public class UserRights {
   public static final String FB_KEY_RIGHTS = "rights";
 
   @IntDef( value = {
-      Constants.MASK_RIGHT_REMOVE_USERS,
-      Constants.MASK_RIGHT_ADD_ITEM,
-      Constants.MASK_RIGHT_ADD_USERS,
-      Constants.MASK_RIGHT_ALL,
-      Constants.MASK_RIGHT_CHECK,
-      Constants.MASK_RIGHT_CLEAN,
-      Constants.MASK_RIGHT_DELETE,
-      Constants.MASK_RIGHT_SEE
+          Constants.INSTANCE.getMASK_RIGHT_REMOVE_USERS(),
+          Constants.INSTANCE.getMASK_RIGHT_ADD_ITEM(),
+          Constants.INSTANCE.getMASK_RIGHT_ADD_USERS(),
+          Constants.INSTANCE.getMASK_RIGHT_ALL(),
+          Constants.INSTANCE.getMASK_RIGHT_CHECK(),
+          Constants.INSTANCE.getMASK_RIGHT_CLEAN(),
+          Constants.INSTANCE.getMASK_RIGHT_DELETE(),
+          Constants.INSTANCE.getMASK_RIGHT_SEE()
   })
   public @interface Mask{}
 
