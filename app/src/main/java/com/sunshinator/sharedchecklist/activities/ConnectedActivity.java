@@ -23,19 +23,24 @@ public abstract class ConnectedActivity extends AppCompatActivity {
     private static final int TIMEOUT_CONNECTION = 10000; // millis
     private static final int TIMEOUT_AUTHENTICATION = 5000;  // millis
 
-    private FirebaseAuth mAuth;
+    private FirebaseAuth auth;
 
-    private boolean mbIsWaitingAuth = false;
-    private boolean mbIsWaitingConnection = false;
-    private boolean mbIsConnected = false;
+    private boolean isWaitingAuth = false;
+    private boolean isWaitingConnection = false;
+    private boolean isConnected = false;
 
-    private Handler mAuthTimeoutHandler = new Handler();
-    private Handler mConnectionTimeoutHandler = new Handler();
+    private Handler authTimeoutHandler = new Handler();
+    private Handler connectionTimeoutHandler = new Handler();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         initVariables();
+    }
+
+    @CallSuper
+    public void initVariables() {
+        auth = FirebaseAuth.getInstance();
     }
 
     @Override
@@ -44,22 +49,30 @@ public abstract class ConnectedActivity extends AppCompatActivity {
         startConnectionListener();
     }
 
+    private void startConnectionListener() {
+        Log.d(LOG_TAG, "Starting connection listener");
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BROADCAST_ACTION);
+        registerReceiver(connectionStateListener, filter);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        mAuth.addAuthStateListener(l_AuthState);
-        mAuthTimeoutHandler.removeCallbacks(l_AuthTimeout);
+        auth.addAuthStateListener(authStateListener);
+        authTimeoutHandler.removeCallbacks(authTimeoutListener);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        mAuth.removeAuthStateListener(l_AuthState);
-        mAuthTimeoutHandler.removeCallbacks(l_AuthTimeout);
+        auth.removeAuthStateListener(authStateListener);
+        authTimeoutHandler.removeCallbacks(authTimeoutListener);
 
-        mbIsWaitingAuth = false;
-        mbIsConnected = false;
+        isWaitingAuth = false;
+        isConnected = false;
     }
 
     @Override
@@ -68,10 +81,12 @@ public abstract class ConnectedActivity extends AppCompatActivity {
         stopConnectionListener();
     }
 
-    @Nullable
-    public final String getUserUid() {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        return currentUser != null ? currentUser.getUid() : null;
+    private void stopConnectionListener() {
+        unregisterReceiver(connectionStateListener);
+        connectionTimeoutHandler.removeCallbacks(connectionTimeoutListener);
+
+        isWaitingConnection = false;
+        isConnected = false;
     }
 
     @Nullable
@@ -80,108 +95,81 @@ public abstract class ConnectedActivity extends AppCompatActivity {
         return currentUser != null ? currentUser.getEmail() : null;
     }
 
-    @CallSuper
-    public void initVariables() {
-        mAuth = FirebaseAuth.getInstance();
-    }
-
-    private void startConnectionListener() {
-
-        Log.d(LOG_TAG, "Starting connection listener");
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BROADCAST_ACTION);
-        registerReceiver(l_ConnectionState, filter);
-    }
-
-    private void stopConnectionListener() {
-        unregisterReceiver(l_ConnectionState);
-        mConnectionTimeoutHandler.removeCallbacks(l_ConnectionTimeout);
-        mbIsWaitingConnection = false;
-        mbIsConnected = false;
-    }
-
-    private final FirebaseAuth.AuthStateListener l_AuthState = new FirebaseAuth.AuthStateListener() {
+    private final FirebaseAuth.AuthStateListener authStateListener = new FirebaseAuth.AuthStateListener() {
         @Override
         public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-
             FirebaseUser user = firebaseAuth.getCurrentUser();
 
             if (user != null) {
                 Log.d(LOG_TAG, "User logged in");
 
-                mAuthTimeoutHandler.removeCallbacks(l_AuthTimeout);
+                authTimeoutHandler.removeCallbacks(authTimeoutListener);
 
-                if (!mbIsWaitingConnection
-                        && ConnectionObserver.isConnected(ConnectedActivity.this)
-                        && !mbIsConnected) {
-                    mbIsConnected = true;
+                if (!isWaitingConnection
+                        && !isConnected
+                        && ConnectionObserver.isConnected(ConnectedActivity.this)) {
+                    isConnected = true;
                     onConnect();
                 }
 
-                mbIsWaitingAuth = false;
-
+                isWaitingAuth = false;
             } else {
                 Log.d(LOG_TAG, "User logged out");
 
-                if (!mbIsWaitingAuth) {
-                    mAuthTimeoutHandler.postDelayed(l_AuthTimeout, TIMEOUT_AUTHENTICATION);
-                    mbIsWaitingAuth = true;
+                if (!isWaitingAuth) {
+                    authTimeoutHandler.postDelayed(authTimeoutListener, TIMEOUT_AUTHENTICATION);
+                    isWaitingAuth = true;
                 }
-
             }
         }
     };
 
-    private final ConnectionObserver l_ConnectionState = new ConnectionObserver() {
+    private final ConnectionObserver connectionStateListener = new ConnectionObserver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-
             Log.d(LOG_TAG, "Update connection state");
 
             if (isConnected(ConnectedActivity.this)) {
+                connectionTimeoutHandler.removeCallbacks(connectionTimeoutListener);
+                isWaitingConnection = false;
 
-                mConnectionTimeoutHandler.removeCallbacks(l_ConnectionTimeout);
-                mbIsWaitingConnection = false;
-
-                if (getUserUid() != null && !mbIsWaitingAuth && !mbIsConnected) {
-                    mbIsConnected = true;
+                if (getUserUid() != null && !isWaitingAuth && !isConnected) {
+                    isConnected = true;
                     onConnect();
                 }
-            } else {
-
-                if (!mbIsWaitingConnection) {
-                    mConnectionTimeoutHandler.postDelayed(l_ConnectionTimeout, TIMEOUT_CONNECTION);
-                    mbIsWaitingConnection = true;
-                }
+            } else if (!isWaitingConnection) {
+                connectionTimeoutHandler.postDelayed(connectionTimeoutListener, TIMEOUT_CONNECTION);
+                isWaitingConnection = true;
             }
-
         }
     };
 
-    private final Runnable l_AuthTimeout = new Runnable() {
+    @Nullable
+    public final String getUserUid() {
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        return currentUser != null ? currentUser.getUid() : null;
+    }
+
+    private final Runnable authTimeoutListener = new Runnable() {
         @Override
         public void run() {
-
             Log.i(LOG_TAG, "Auth timeout");
-            mbIsWaitingAuth = false;
+            isWaitingAuth = false;
 
             if (getUserUid() == null) {
-                mbIsConnected = false;
+                isConnected = false;
                 onUnauthenticated();
             }
-
         }
     };
 
-    private final Runnable l_ConnectionTimeout = new Runnable() {
+    private final Runnable connectionTimeoutListener = new Runnable() {
         @Override
         public void run() {
-
-            mbIsWaitingConnection = false;
+            isWaitingConnection = false;
 
             if (!ConnectionObserver.isConnected(ConnectedActivity.this)) {
-                mbIsConnected = false;
+                isConnected = false;
                 onDisconnect();
             }
         }

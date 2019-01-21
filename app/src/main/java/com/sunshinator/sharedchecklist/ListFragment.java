@@ -3,6 +3,7 @@ package com.sunshinator.sharedchecklist;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.app.AlertDialog;
@@ -48,80 +49,43 @@ public class ListFragment extends Fragment {
     private static final String FB_KEY_ITEMS = "items";
     private static final String FB_KEY_USERS = "authorizedUsers";
 
-    private Dialog mAddUserDialog;
-    private Dialog mRemoveUserDialog;
-    private AlertDialog mConfirmationDialog;
-    private Dialog mNewEntryDialog;
+    private Dialog addUserDialog;
+    private Dialog removeUserDialog;
+    private AlertDialog confirmationDialog;
+    private Dialog newEntryDialog;
 
-    private View mvDeleteList;
-    private View mvRemoveUsers;
-    private View mvAddUsers;
-    private View mvClearList;
-    private View mvDeleteChecked;
-    private View mvAddItems;
-    private View mvMenu;
-    private View mvRemoveUsersSubmit;
-    private View mvRemoveUsersLoad;
-    private RecyclerView mvUserList;
-    private RecyclerView mvList;
+    private View deleteListCta;
+    private View removeUsersCta;
+    private View addUsersCta;
+    private View clearListCta;
+    private View deleteCheckedCta;
+    private View addItemsCta;
+    private View menuLayout;
+    private View removeUsersSubmitCta;
+    private View removeUsersLoadView;
+    private RecyclerView userList;
+    private RecyclerView listContent;
 
-    private EditText mvNewUser;
-    private EditText mvNewEntry;
+    private EditText newUserEntry;
+    private EditText newListEntry;
 
-    private CheckBox mvPermAddItems;
-    private CheckBox mvPermCheck;
-    private CheckBox mvPermClean;
-    private CheckBox mvPermAddUsers;
-    private CheckBox mvPermRemoveUsers;
-    private CheckBox mvPermDelete;
+    private CheckBox addItemsPermissionCheckBox;
+    private CheckBox checkPermissionCheckBox;
+    private CheckBox cleanPermissionCheckBox;
+    private CheckBox addUsersPermissionCheckBox;
+    private CheckBox removeUsersPermissionCheckBox;
+    private CheckBox deletePermissionCheckBox;
 
-    private DatabaseReference mReference;
-    private CheckList mCheckList;
+    private DatabaseReference dbReference;
+    private CheckList checkList;
 
-    private CheckListAdapter mAdapter;
-    private UserAdapter mUserAdapter;
+    private CheckListAdapter checkListAdapter;
+    private UserAdapter userAdapter;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
-
         super.onCreate(savedInstanceState);
-
         initDialogs();
-
-    }
-
-    @Nullable
-    @Override
-    public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container,
-                             Bundle savedInstanceState) {
-
-        View vRoot = inflater.inflate(R.layout.fragment_list, container);
-
-        initViews(vRoot);
-
-        return vRoot;
-
-    }
-
-    @Override
-    public void onResume() {
-
-        super.onResume();
-
-        mvList.setAdapter(mAdapter);
-
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        closeAllDialogs();
-
-        if(mAdapter != null) mAdapter.stopListening();
-        if(mUserAdapter != null) mUserAdapter.stopListening();
-
-        mCheckList = null;
     }
 
     private void initDialogs() {
@@ -130,63 +94,60 @@ public class ListFragment extends Fragment {
         initNewEntryDialog();
     }
 
-    private void initRemoveUserDialog() {
+    private void initAddUserDialog() {
+        //noinspection ConstantConditions
+        addUserDialog = new Dialog(getContext());
+        addUserDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        addUserDialog.setContentView(R.layout.dialog_new_user);
 
-        mRemoveUserDialog = new Dialog(getContext());
-        mRemoveUserDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        mRemoveUserDialog.setContentView(R.layout.dialog_remove_user);
+        newUserEntry = addUserDialog.findViewById(R.id.email_new);
+        addItemsPermissionCheckBox = addUserDialog.findViewById(R.id.perm_add_item);
+        checkPermissionCheckBox = addUserDialog.findViewById(R.id.perm_check);
+        addUsersPermissionCheckBox = addUserDialog.findViewById(R.id.perm_users_add);
+        removeUsersPermissionCheckBox = addUserDialog.findViewById(R.id.perm_users_remove);
+        cleanPermissionCheckBox = addUserDialog.findViewById(R.id.perm_clean);
+        deletePermissionCheckBox = addUserDialog.findViewById(R.id.perm_delete);
 
-        mvRemoveUsersSubmit = mRemoveUserDialog.findViewById(R.id.submit);
-        mvRemoveUsersLoad = mRemoveUserDialog.findViewById(R.id.load);
-        mvUserList = mRemoveUserDialog.findViewById(R.id.list);
-
-        mvRemoveUsersSubmit.setOnClickListener(l_OpenRemoveUserConfirmation);
+        View vSubmit = addUserDialog.findViewById(R.id.submit_user);
+        vSubmit.setOnClickListener(newUserSubmittedListener);
     }
 
-    private void initAddUserDialog() {
+    private void initRemoveUserDialog() {
+        //noinspection ConstantConditions
+        removeUserDialog = new Dialog(getContext());
+        removeUserDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        removeUserDialog.setContentView(R.layout.dialog_remove_user);
 
-        mAddUserDialog = new Dialog(getContext());
-        mAddUserDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        mAddUserDialog.setContentView(R.layout.dialog_new_user);
+        removeUsersSubmitCta = removeUserDialog.findViewById(R.id.submit);
+        removeUsersLoadView = removeUserDialog.findViewById(R.id.load);
+        userList = removeUserDialog.findViewById(R.id.list);
 
-        mvNewUser = mAddUserDialog.findViewById(R.id.email_new);
-        mvPermAddItems = mAddUserDialog.findViewById(R.id.perm_add_item);
-        mvPermCheck = mAddUserDialog.findViewById(R.id.perm_check);
-        mvPermAddUsers = mAddUserDialog.findViewById(R.id.perm_users_add);
-        mvPermRemoveUsers = mAddUserDialog.findViewById(R.id.perm_users_remove);
-        mvPermClean = mAddUserDialog.findViewById(R.id.perm_clean);
-        mvPermDelete = mAddUserDialog.findViewById(R.id.perm_delete);
-
-        View vSubmit = mAddUserDialog.findViewById(R.id.submit_user);
-        vSubmit.setOnClickListener(l_SubmitNewUser);
+        removeUsersSubmitCta.setOnClickListener(removeUserClickListener);
     }
 
     private void initNewEntryDialog() {
+        //noinspection ConstantConditions
+        newEntryDialog = new Dialog(getContext());
+        newEntryDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        newEntryDialog.setContentView(R.layout.dialog_text_entry);
 
-        mNewEntryDialog = new Dialog(getContext());
-        mNewEntryDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        mNewEntryDialog.setContentView(R.layout.dialog_text_entry);
+        newListEntry = newEntryDialog.findViewById(R.id.entry);
 
-        mvNewEntry = mNewEntryDialog.findViewById(R.id.entry);
-
-        Window window = mNewEntryDialog.getWindow();
+        Window window = newEntryDialog.getWindow();
         if (window != null) {
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         }
 
-        mNewEntryDialog.setOnShowListener(new DialogInterface.OnShowListener() {
+        newEntryDialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
             public void onShow(DialogInterface dialogInterface) {
-
-                mvNewEntry.setText(null);
-
+                newListEntry.setText(null);
             }
         });
 
-        mvNewEntry.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+        newListEntry.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
-
                 boolean handled = false;
 
                 if (i == EditorInfo.IME_ACTION_DONE) {
@@ -198,148 +159,158 @@ public class ListFragment extends Fragment {
             }
         });
 
-        View vSubmit = mNewEntryDialog.findViewById(R.id.submit);
+        View vSubmit = newEntryDialog.findViewById(R.id.submit);
         vSubmit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 onSubmitNewEntry();
             }
         });
     }
 
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+        View vRoot = inflater.inflate(R.layout.fragment_list, container);
+        initViews(vRoot);
+        return vRoot;
+    }
+
     private void initViews(View vRoot) {
+        deleteListCta = vRoot.findViewById(R.id.delete_list);
+        removeUsersCta = vRoot.findViewById(R.id.user_remove);
+        addUsersCta = vRoot.findViewById(R.id.user_add);
+        clearListCta = vRoot.findViewById(R.id.clear);
+        deleteCheckedCta = vRoot.findViewById(R.id.clear_checked);
+        addItemsCta = vRoot.findViewById(R.id.add_item);
+        menuLayout = vRoot.findViewById(R.id.menu);
+        listContent = vRoot.findViewById(R.id.list);
 
-        mvDeleteList = vRoot.findViewById(R.id.delete_list);
-        mvRemoveUsers = vRoot.findViewById(R.id.user_remove);
-        mvAddUsers = vRoot.findViewById(R.id.user_add);
-        mvClearList = vRoot.findViewById(R.id.clear);
-        mvDeleteChecked = vRoot.findViewById(R.id.clear_checked);
-        mvAddItems = vRoot.findViewById(R.id.add_item);
-        mvMenu = vRoot.findViewById(R.id.menu);
-        mvList = vRoot.findViewById(R.id.list);
+        addItemsCta.setOnClickListener(openAddItemDialogListener);
+        deleteCheckedCta.setOnClickListener(openDeleteCheckConfirmationListener);
+        clearListCta.setOnClickListener(openClearConfirmationListener);
+        addUsersCta.setOnClickListener(openNewUserDialogListener);
+        deleteListCta.setOnClickListener(openDeleteListConfirmationListener);
+        removeUsersCta.setOnClickListener(openRemoveUserDialogListener);
+    }
 
-        mvAddItems.setOnClickListener(l_OpenAddItemDialog);
-        mvDeleteChecked.setOnClickListener(l_OpenDeleteCheckConfirmation);
-        mvClearList.setOnClickListener(l_OpenClearConfirmation);
-        mvAddUsers.setOnClickListener(l_OpenNewUserDialog);
-        mvDeleteList.setOnClickListener(l_OpenDeleteListConfirmation);
-        mvRemoveUsers.setOnClickListener(l_OpenRemoveUserDialog);
+    @Override
+    public void onResume() {
+        super.onResume();
+        listContent.setAdapter(checkListAdapter);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        closeAllDialogs();
+
+        if (checkListAdapter != null) checkListAdapter.stopListening();
+        if (userAdapter != null) userAdapter.stopListening();
+
+        checkList = null;
+    }
+
+    private void closeAllDialogs() {
+        if (confirmationDialog != null && confirmationDialog.isShowing()) {
+            confirmationDialog.dismiss();
+        }
+
+        if (addUserDialog.isShowing()) {
+            addUserDialog.dismiss();
+        }
+
+        if (newEntryDialog.isShowing()) {
+            newEntryDialog.dismiss();
+        }
+
+        if (removeUserDialog != null && removeUserDialog.isShowing()) {
+            removeUserDialog.dismiss();
+        }
     }
 
     public void setToList(@Nullable CheckList list) {
-
         Log.d(LOG_TAG, "setToList: " + list);
 
-        if (list != null && !list.equals(mCheckList)) {
-            mReference = FirebaseDatabase.getInstance().getReference()
-                    .child(FB_KEY_APP).child(FB_KEY_LIST).child(list.getUid());
+        if (list != null && !list.equals(checkList)) {
+            dbReference = FirebaseDatabase.getInstance().getReference()
+                    .child(FB_KEY_APP)
+                    .child(FB_KEY_LIST)
+                    .child(list.getUid());
 
-            mAdapter = new CheckListAdapter(mReference.child(FB_KEY_ITEMS), l_ItemClicked);
-            mAdapter.startListening();
-            mvList.setAdapter(mAdapter);
+            checkListAdapter = new CheckListAdapter(dbReference.child(FB_KEY_ITEMS), itemClickedListener);
+            checkListAdapter.startListening();
+            listContent.setAdapter(checkListAdapter);
 
-            mUserAdapter = new UserAdapter(mReference.child(FB_KEY_USERS));
-            mUserAdapter.startListening();
-            mvUserList.setAdapter(mUserAdapter);
+            userAdapter = new UserAdapter(dbReference.child(FB_KEY_USERS));
+            userAdapter.startListening();
+            userList.setAdapter(userAdapter);
         }
 
-        mCheckList = list;
+        checkList = list;
 
         adjustRightsViewsVisibility();
     }
 
     private void adjustRightsViewsVisibility() {
-
         int rights = getUsersRights();
 
-        mvAddItems
-                .setVisibility((rights & Constants.MASK_RIGHT_ADD_ITEM) == Constants.MASK_RIGHT_ADD_ITEM
-                        ? View.VISIBLE
-                        : View.GONE);
-        mvClearList.setVisibility((rights & Constants.MASK_RIGHT_CLEAN) == Constants.MASK_RIGHT_CLEAN
+        addItemsCta.setVisibility((rights & Constants.MASK_RIGHT_ADD_ITEM) == Constants.MASK_RIGHT_ADD_ITEM
                 ? View.VISIBLE
                 : View.GONE);
-        mvDeleteList
-                .setVisibility((rights & Constants.MASK_RIGHT_DELETE) == Constants.MASK_RIGHT_DELETE
-                        ? View.VISIBLE
-                        : View.GONE);
-        mvDeleteChecked
-                .setVisibility((rights & Constants.MASK_RIGHT_CLEAN) == Constants.MASK_RIGHT_CLEAN
-                        ? View.VISIBLE
-                        : View.GONE);
+        clearListCta.setVisibility((rights & Constants.MASK_RIGHT_CLEAN) == Constants.MASK_RIGHT_CLEAN
+                ? View.VISIBLE
+                : View.GONE);
+        deleteListCta.setVisibility((rights & Constants.MASK_RIGHT_DELETE) == Constants.MASK_RIGHT_DELETE
+                ? View.VISIBLE
+                : View.GONE);
+        deleteCheckedCta.setVisibility((rights & Constants.MASK_RIGHT_CLEAN) == Constants.MASK_RIGHT_CLEAN
+                ? View.VISIBLE
+                : View.GONE);
 
-        mvAddUsers.setVisibility(
-                (rights & Constants.MASK_RIGHT_ADD_USERS) == Constants.MASK_RIGHT_ADD_USERS
-                        ? View.VISIBLE
-                        : View.GONE);
-        mvRemoveUsers.setVisibility(
-                (rights & Constants.MASK_RIGHT_REMOVE_USERS) == Constants.MASK_RIGHT_REMOVE_USERS
-                        ? View.VISIBLE
-                        : View.GONE);
+        addUsersCta.setVisibility((rights & Constants.MASK_RIGHT_ADD_USERS) == Constants.MASK_RIGHT_ADD_USERS
+                ? View.VISIBLE
+                : View.GONE);
+        removeUsersCta.setVisibility((rights & Constants.MASK_RIGHT_REMOVE_USERS) == Constants.MASK_RIGHT_REMOVE_USERS
+                ? View.VISIBLE
+                : View.GONE);
 
-        mvMenu.setVisibility(rights >= Constants.MASK_RIGHT_SEE ? View.VISIBLE : View.GONE);
+        menuLayout.setVisibility(rights >= Constants.MASK_RIGHT_SEE ? View.VISIBLE : View.GONE);
     }
 
     private int getUsersRights() {
-
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        if (user == null || mCheckList == null) {
+        if (user == null || checkList == null) {
             return 0;
         }
 
         String email = user.getEmail();
-        UserRights rights = mCheckList.getAuthorizedUsers().get(email);
+        UserRights rights = checkList.getAuthorizedUsers().get(email);
 
-        if (rights == null) {
-            return 0;
-        }
-
-        return rights.getRights();
+        return rights == null ? 0 : rights.getRights();
     }
 
     public CheckList getCheckList() {
-
-        return mCheckList;
+        return checkList;
     }
 
     private void onSubmitNewEntry() {
-
-        final String entry = mvNewEntry.getText().toString();
+        final String entry = newListEntry.getText().toString();
 
         if (entry.length() > 0) {
-            mReference.getRef().child(FB_KEY_ITEMS).push()
-                    .setValue(new CheckListEntry(entry), l_UpdateCompletion);
+            dbReference.getRef().child(FB_KEY_ITEMS).push()
+                    .setValue(new CheckListEntry(entry), dbUpdateCompletionListener);
         } else {
             Toast.makeText(getContext(), R.string.warn_empty_item, Toast.LENGTH_LONG).show();
         }
     }
 
-    private void closeAllDialogs() {
-
-        if (mConfirmationDialog != null && mConfirmationDialog.isShowing()) {
-            mConfirmationDialog.dismiss();
-        }
-
-        if (mAddUserDialog.isShowing()) {
-            mAddUserDialog.dismiss();
-        }
-
-        if (mNewEntryDialog.isShowing()) {
-            mNewEntryDialog.dismiss();
-        }
-
-        if (mRemoveUserDialog != null && mRemoveUserDialog.isShowing()) {
-            mRemoveUserDialog.dismiss();
-        }
-    }
-
-    private final View.OnClickListener l_SubmitNewUser = new View.OnClickListener() {
+    private final View.OnClickListener newUserSubmittedListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-
-            String user = mvNewUser.getText().toString();
+            String user = newUserEntry.getText().toString();
 
             if (user.length() <= 0) {
                 Toast.makeText(getContext(), R.string.warn_empty_user, Toast.LENGTH_LONG).show();
@@ -350,8 +321,8 @@ public class ListFragment extends Fragment {
             rights.setId(user);
             rights.setRights(computeRightsCode());
 
-            mReference.child(FB_KEY_USERS).child(rights.getId())
-                    .setValue(rights, l_UpdateCompletion);
+            dbReference.child(FB_KEY_USERS).child(rights.getId())
+                    .setValue(rights, dbUpdateCompletionListener);
         }
     };
 
@@ -359,22 +330,22 @@ public class ListFragment extends Fragment {
 
         int rightsCode = Constants.MASK_RIGHT_SEE;
 
-        if (mvPermClean.isChecked()) {
+        if (cleanPermissionCheckBox.isChecked()) {
             rightsCode |= Constants.MASK_RIGHT_CLEAN;
         }
-        if (mvPermAddItems.isChecked()) {
+        if (addItemsPermissionCheckBox.isChecked()) {
             rightsCode |= Constants.MASK_RIGHT_ADD_ITEM;
         }
-        if (mvPermAddUsers.isChecked()) {
+        if (addUsersPermissionCheckBox.isChecked()) {
             rightsCode |= Constants.MASK_RIGHT_ADD_USERS;
         }
-        if (mvPermCheck.isChecked()) {
+        if (checkPermissionCheckBox.isChecked()) {
             rightsCode |= Constants.MASK_RIGHT_CHECK;
         }
-        if (mvPermDelete.isChecked()) {
+        if (deletePermissionCheckBox.isChecked()) {
             rightsCode |= Constants.MASK_RIGHT_DELETE;
         }
-        if (mvPermRemoveUsers.isChecked()) {
+        if (removeUsersPermissionCheckBox.isChecked()) {
             rightsCode |= Constants.MASK_RIGHT_REMOVE_USERS;
         }
 
@@ -391,7 +362,6 @@ public class ListFragment extends Fragment {
         result.append(iterator.next());
 
         while (iterator.hasNext()) {
-
             final UserRights next = iterator.next();
 
             if (iterator.hasNext()) {
@@ -406,18 +376,16 @@ public class ListFragment extends Fragment {
         return result.toString();
     }
 
-    private final View.OnClickListener l_OpenAddItemDialog = new View.OnClickListener() {
+    private final View.OnClickListener openAddItemDialogListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-
-            mNewEntryDialog.show();
+            newEntryDialog.show();
         }
     };
 
-    private final ItemClickCallback l_ItemClicked = new ItemClickCallback() {
+    private final ItemClickCallback itemClickedListener = new ItemClickCallback() {
         @Override
         public void onItemClick(DatabaseReference ref, CheckListEntry entry) {
-
             Log.d(LOG_TAG, "onItemClick: Entry: " + entry + " Ref: " + ref);
 
             final FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
@@ -426,8 +394,7 @@ public class ListFragment extends Fragment {
                 return;
             }
 
-            if ((mCheckList.getRightsOf(currentUser.getEmail()) & Constants.MASK_RIGHT_CHECK)
-                    != Constants.MASK_RIGHT_CHECK) {
+            if ((checkList.getRightsOf(currentUser.getEmail()) & Constants.MASK_RIGHT_CHECK) != Constants.MASK_RIGHT_CHECK) {
                 return;
             }
 
@@ -436,144 +403,132 @@ public class ListFragment extends Fragment {
                 checker = currentUser.getEmail();
             }
 
-            ref.child(CheckListEntry.FB_KEY_CHECKED).setValue(checker, l_UpdateCompletion);
-
+            ref.child(CheckListEntry.FB_KEY_CHECKED).setValue(checker, dbUpdateCompletionListener);
         }
     };
 
-    private final CompletionListener l_UpdateCompletion = new CompletionListener() {
+    private final CompletionListener dbUpdateCompletionListener = new CompletionListener() {
         @Override
-        public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
-
+        public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
             if (databaseError != null) {
                 Log.e(LOG_TAG, "onComplete", databaseError.toException());
                 Toast.makeText(getContext(), R.string.err_network, Toast.LENGTH_LONG).show();
             } else {
-                mvNewEntry.setText(null);
-                mvNewUser.setText(null);
+                newListEntry.setText(null);
+                newUserEntry.setText(null);
 
-                if (mConfirmationDialog != null && mConfirmationDialog.isShowing()) {
-                    mConfirmationDialog.dismiss();
+                if (confirmationDialog != null && confirmationDialog.isShowing()) {
+                    confirmationDialog.dismiss();
                 }
             }
 
         }
     };
 
-    private final View.OnClickListener l_OpenDeleteCheckConfirmation = new View.OnClickListener() {
+    private final View.OnClickListener openDeleteCheckConfirmationListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-
             closeAllDialogs();
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             builder = builder.setMessage(String.format(
-                    getString(R.string.message_confirm_delete_checked), mCheckList.getName()))
-                    .setPositiveButton(R.string.answer_affirmative, l_Clean)
-                    .setNegativeButton(R.string.answer_negative, l_Dismiss);
+                    getString(R.string.message_confirm_delete_checked), checkList.getName()))
+                    .setPositiveButton(R.string.answer_affirmative, cleanClickedListener)
+                    .setNegativeButton(R.string.answer_negative, dismissClickedListener);
 
-            mConfirmationDialog = builder.create();
-            mConfirmationDialog.show();
+            confirmationDialog = builder.create();
+            confirmationDialog.show();
         }
     };
 
-    private final View.OnClickListener l_OpenDeleteListConfirmation = new View.OnClickListener() {
+    private final View.OnClickListener openDeleteListConfirmationListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-
             closeAllDialogs();
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             builder = builder.setMessage(String.format(
-                    getString(R.string.message_confirm_delete_list), mCheckList.getName()))
-                    .setPositiveButton(R.string.answer_affirmative, l_DeleteList)
-                    .setNegativeButton(R.string.answer_negative, l_Dismiss);
+                    getString(R.string.message_confirm_delete_list), checkList.getName()))
+                    .setPositiveButton(R.string.answer_affirmative, deleteListListener)
+                    .setNegativeButton(R.string.answer_negative, dismissClickedListener);
 
-            mConfirmationDialog = builder.create();
-            mConfirmationDialog.show();
+            confirmationDialog = builder.create();
+            confirmationDialog.show();
         }
     };
 
-    private final DialogInterface.OnClickListener l_DeleteList = new DialogInterface
+    private final DialogInterface.OnClickListener deleteListListener = new DialogInterface
             .OnClickListener() {
         @Override
         public void onClick(DialogInterface dialogInterface, int i) {
-
-            mReference.setValue(null, l_UpdateCompletion);
+            dbReference.setValue(null, dbUpdateCompletionListener);
         }
     };
 
-    private final View.OnClickListener l_OpenClearConfirmation = new View.OnClickListener() {
+    private final View.OnClickListener openClearConfirmationListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-
             closeAllDialogs();
 
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             builder = builder.setMessage(String.format(
-                    getString(R.string.message_confirm_delete_all), mCheckList.getName()))
-                    .setPositiveButton(R.string.answer_affirmative, l_Clear)
-                    .setNegativeButton(R.string.answer_negative, l_Dismiss);
+                    getString(R.string.message_confirm_delete_all), checkList.getName()))
+                    .setPositiveButton(R.string.answer_affirmative, clearClickListener)
+                    .setNegativeButton(R.string.answer_negative, dismissClickedListener);
 
-            mConfirmationDialog = builder.create();
-            mConfirmationDialog.show();
+            confirmationDialog = builder.create();
+            confirmationDialog.show();
         }
     };
 
-    private final DialogInterface.OnClickListener l_Clean = new DialogInterface.OnClickListener() {
+    private final DialogInterface.OnClickListener cleanClickedListener = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialogInterface, int i) {
-
-            List<String> checked = mAdapter.getCheckedEntries();
+            List<String> checked = checkListAdapter.getCheckedEntries();
 
             Map<String, Object> updateMap = new HashMap<>();
             for (String entry : checked) {
                 updateMap.put(entry, null);
             }
 
-            mReference.child(FB_KEY_ITEMS).updateChildren(updateMap, l_UpdateCompletion);
+            dbReference.child(FB_KEY_ITEMS).updateChildren(updateMap, dbUpdateCompletionListener);
         }
     };
 
-    private final DialogInterface.OnClickListener l_Clear = new DialogInterface.OnClickListener() {
+    private final DialogInterface.OnClickListener clearClickListener = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialogInterface, int i) {
-
-            mReference.child(FB_KEY_ITEMS).setValue(null, l_UpdateCompletion);
+            dbReference.child(FB_KEY_ITEMS).setValue(null, dbUpdateCompletionListener);
         }
     };
 
-    private final DialogInterface.OnClickListener l_Dismiss = new DialogInterface.OnClickListener() {
+    private final DialogInterface.OnClickListener dismissClickedListener = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialogInterface, int i) {
-
             dialogInterface.dismiss();
-
         }
     };
 
-    private final View.OnClickListener l_OpenNewUserDialog = new View.OnClickListener() {
-        @Override
-        public void onClick(View view) {
-
-            closeAllDialogs();
-
-            mAddUserDialog.show();
-        }
-    };
-
-    private final View.OnClickListener l_OpenRemoveUserDialog = new View.OnClickListener() {
+    private final View.OnClickListener openNewUserDialogListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
             closeAllDialogs();
-            mRemoveUserDialog.show();
+            addUserDialog.show();
         }
     };
 
-    private final View.OnClickListener l_OpenRemoveUserConfirmation = new View.OnClickListener() {
+    private final View.OnClickListener openRemoveUserDialogListener = new View.OnClickListener() {
         @Override
         public void onClick(View view) {
-            List<UserRights> toDelete = mUserAdapter.getCheckedEntries();
+            closeAllDialogs();
+            removeUserDialog.show();
+        }
+    };
+
+    private final View.OnClickListener removeUserClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View view) {
+            List<UserRights> toDelete = userAdapter.getCheckedEntries();
 
             Log.d(LOG_TAG, "onClick: To remove: " + toDelete.toString());
 
@@ -583,25 +538,25 @@ public class ListFragment extends Fragment {
 
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 builder = builder.setMessage(getString(R.string.message_confirm_delete_users,
-                        enumerate(mUserAdapter.getCheckedEntries())))
-                        .setPositiveButton(R.string.answer_affirmative, l_RemoveUsers)
-                        .setNegativeButton(R.string.answer_negative, l_Dismiss);
+                        enumerate(userAdapter.getCheckedEntries())))
+                        .setPositiveButton(R.string.answer_affirmative, removeUsersListener)
+                        .setNegativeButton(R.string.answer_negative, dismissClickedListener);
 
-                mConfirmationDialog = builder.create();
-                mConfirmationDialog.show();
+                confirmationDialog = builder.create();
+                confirmationDialog.show();
             }
         }
     };
 
-    private final DialogInterface.OnClickListener l_RemoveUsers = new DialogInterface.OnClickListener() {
+    private final DialogInterface.OnClickListener removeUsersListener = new DialogInterface.OnClickListener() {
         @Override
         public void onClick(DialogInterface dialogInterface, int yo) {
-            mConfirmationDialog.dismiss();
+            confirmationDialog.dismiss();
 
-            List<UserRights> toDelete = mUserAdapter.getCheckedEntries();
+            List<UserRights> toDelete = userAdapter.getCheckedEntries();
 
-            mvRemoveUsersSubmit.setVisibility(View.GONE);
-            mvRemoveUsersLoad.setVisibility(View.VISIBLE);
+            removeUsersSubmitCta.setVisibility(View.GONE);
+            removeUsersLoadView.setVisibility(View.VISIBLE);
 
             Map<String, Object> updateMap = new HashMap<>();
 
@@ -610,23 +565,22 @@ public class ListFragment extends Fragment {
                 updateMap.put(user.getId(), null);
             }
 
-            mReference.child(FB_KEY_USERS).updateChildren(updateMap, l_UserDeleted);
+            dbReference.child(FB_KEY_USERS).updateChildren(updateMap, userDeletedListener);
         }
     };
 
-    private final CompletionListener l_UserDeleted = new CompletionListener() {
+    private final CompletionListener userDeletedListener = new CompletionListener() {
         @Override
-        public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
-
+        public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
             if (databaseError != null) {
                 Toast.makeText(getContext(), R.string.err_network, Toast.LENGTH_LONG).show();
                 Log.e(LOG_TAG, "onComplete: ", databaseError.toException());
             } else {
-                mRemoveUserDialog.dismiss();
+                removeUserDialog.dismiss();
             }
 
-            mvRemoveUsersSubmit.setVisibility(View.GONE);
-            mvRemoveUsersLoad.setVisibility(View.VISIBLE);
+            removeUsersSubmitCta.setVisibility(View.GONE);
+            removeUsersLoadView.setVisibility(View.VISIBLE);
         }
     };
 }

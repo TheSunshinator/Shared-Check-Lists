@@ -1,9 +1,11 @@
 package com.sunshinator.sharedchecklist.objects;
 
 import android.support.annotation.NonNull;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.Exclude;
 import com.sunshinator.sharedchecklist.Constants;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,134 +16,120 @@ import java.util.Map;
  */
 public class CheckList {
 
-  private static final String FB_KEY_ITEMS = "items";
-  private static final String FB_KEY_NAME  = "name";
-  private static final String FB_KEY_USERS = "authorizedUsers";
+    private static final String FB_KEY_ITEMS = "items";
+    private static final String FB_KEY_NAME = "name";
+    private static final String FB_KEY_USERS = "authorizedUsers";
 
-  private String                      mName    = null;
-  private String                      mUid     = null;
-  private Map<String, UserRights>     mUsers   = null;
-  private Map<String, CheckListEntry> mEntries = null;
+    private String name = null;
+    private String uid = null;
+    private Map<String, UserRights> users = null;
+    private Map<String, CheckListEntry> entries = null;
 
-  public static CheckList parse( @NonNull DataSnapshot snapshot ) {
+    public static CheckList parse(@NonNull DataSnapshot snapshot) {
+        CheckList instance = new CheckList();
+        instance.uid = snapshot.getKey();
+        instance.name = snapshot.child(FB_KEY_NAME).getValue(String.class);
 
-    CheckList instance = new CheckList();
-    instance.mUid = snapshot.getKey();
-    instance.mName = snapshot.child( FB_KEY_NAME ).getValue( String.class );
+        if (snapshot.child(FB_KEY_USERS).exists()) {
+            instance.users = new HashMap<>();
 
-    if ( snapshot.child( FB_KEY_USERS ).exists() ) {
-      instance.mUsers = new HashMap<>();
+            for (DataSnapshot user : snapshot.child(FB_KEY_USERS).getChildren()) {
+                final UserRights parsed = UserRights.parse(user);
+                instance.users.put(parsed.getId(), parsed);
+            }
+        }
 
-      for ( DataSnapshot user : snapshot.child( FB_KEY_USERS ).getChildren() ) {
-        final UserRights parsed = UserRights.parse( user );
-        instance.mUsers.put( parsed.getId(), parsed );
-      }
+        if (snapshot.child(FB_KEY_ITEMS).exists()) {
+            instance.entries = new HashMap<>();
 
+            for (DataSnapshot item : snapshot.child(FB_KEY_ITEMS).getChildren()) {
+                final CheckListEntry parsed = CheckListEntry.parse(item);
+                instance.entries.put(parsed.getUid(), parsed);
+            }
+        }
+
+        return instance;
     }
 
-    if ( snapshot.child( FB_KEY_ITEMS ).exists() ) {
-      instance.mEntries = new HashMap<>();
-
-      for ( DataSnapshot item : snapshot.child( FB_KEY_ITEMS ).getChildren() ) {
-        final CheckListEntry parsed = CheckListEntry.parse( item );
-        instance.mEntries.put( parsed.getUid(), parsed );
-      }
-
+    @SuppressWarnings("WeakerAccess")
+    public CheckList() {
     }
 
-    return instance;
-  }
+    public CheckList(@NonNull String name, @NonNull String email) {
+        this.name = name;
 
-  public CheckList() {}
-  public CheckList( @NonNull String name, @NonNull String email ) {
-    mName = name;
-
-    mUsers = new HashMap<>();
-    final UserRights adminRights = new UserRights( email, Constants.INSTANCE.getMASK_RIGHT_ALL());
-    mUsers.put( adminRights.getId(), adminRights );
-  }
-
-  @Override
-  public boolean equals( Object obj ) {
-
-    if ( obj == null ) {
-      return false;
+        users = new HashMap<>();
+        final UserRights adminRights = new UserRights(email, Constants.MASK_RIGHT_ALL);
+        users.put(adminRights.getId(), adminRights);
     }
 
-    if ( obj instanceof CheckList ) {
-      CheckList checkList = (CheckList) obj;
+    @Override
+    public boolean equals(Object obj) {
 
-      return mUid == null
-             ? checkList.mUid == null
-             : mUid.equals( checkList.mUid );
-    } else if ( obj instanceof String ) {
-      String uid = (String) obj;
+        if (obj == null) {
+            return false;
+        }
 
-      return uid.equals( mUid );
+        if (obj instanceof CheckList) {
+            CheckList checkList = (CheckList) obj;
+
+            return uid == null
+                    ? checkList.uid == null
+                    : uid.equals(checkList.uid);
+        } else if (obj instanceof String) {
+            String uid = (String) obj;
+            return uid.equals(this.uid);
+        }
+
+        return false;
     }
 
-    return false;
-  }
+    @NonNull
+    @Override
+    public String toString() {
+        return name;
+    }
 
-  @Override
-  public String toString() {
-    return mName;
-  }
+    @Exclude
+    public int getRightsOf(String email) {
+        if (email == null) return 0;
+        if (users == null) return 0;
+        UserRights userRights = users.get(email);
+        return userRights == null ? 0 : userRights.getRights();
+    }
 
-  @Exclude
-  public int getRightsOf( String email ){
-    if( email == null ) return 0;
-    if( mUsers == null ) return 0;
-    if( !mUsers.containsKey( email ) ) return 0;
-    return mUsers.get( email ).getRights();
-  }
+    @Exclude
+    public String getUid() {
+        return uid;
+    }
 
-  // ----- ----- ----- ----- ----- ----- //
-  // region // ----- - Getters and Setters - ----- //
-  @Exclude
-  public String getUid() {
+    @Exclude
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 
-    return mUid;
-  }
+    @NonNull
+    public String getName() {
+        return name;
+    }
 
-  @Exclude
-  public void setUid( String uid ) {
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    mUid = uid;
-  }
+    public Map<String, UserRights> getAuthorizedUsers() {
+        return users;
+    }
 
-  @NonNull
-  public String getName() {
+    public void setAuthorizedUsers(Map<String, UserRights> users) {
+        this.users = users;
+    }
 
-    return mName;
-  }
+    public Map<String, CheckListEntry> getItems() {
+        return entries;
+    }
 
-  public void setName( String name ) {
-
-    mName = name;
-  }
-
-  public Map<String, UserRights> getAuthorizedUsers() {
-
-    return mUsers;
-  }
-
-  public void setAuthorizedUsers( Map<String, UserRights> users ) {
-
-    mUsers = users;
-  }
-
-  public Map<String, CheckListEntry> getItems() {
-
-    return mEntries;
-  }
-
-  public void setItems( Map<String, CheckListEntry> entries ) {
-
-    mEntries = entries;
-  }
-
-  // endregion
-  // ----- ----- ----- ----- ----- ----- //
-
+    public void setItems(Map<String, CheckListEntry> entries) {
+        this.entries = entries;
+    }
 }

@@ -15,13 +15,12 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.Query;
 import com.sunshinator.sharedchecklist.R;
 import com.sunshinator.sharedchecklist.adapters.StringAdapter.ViewHolder;
-import com.sunshinator.sharedchecklist.objects.UserRights;
 
 public class StringAdapter<T> extends FirebaseRecyclerAdapter<T, ViewHolder> {
 
     private static final String LOG_TAG = CheckListAdapter.class.getSimpleName();
 
-    private ItemClickCallback mCallback;
+    private ItemClickCallback callback;
 
     public StringAdapter(Class<T> modelClass, Query ref, ItemClickCallback callback) {
         super(new FirebaseRecyclerOptions.Builder<T>()
@@ -30,50 +29,49 @@ public class StringAdapter<T> extends FirebaseRecyclerAdapter<T, ViewHolder> {
 
         Log.d(LOG_TAG, "CheckListAdapter: Ref: " + ref);
 
-        mCallback = callback;
+        this.callback = callback;
     }
 
     @Override
     protected void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull T model) {
         Log.d(LOG_TAG, "populateViewHolder: with entry: " + model.toString());
         DatabaseReference ref = getRef(position);
-        holder.setToEntry(model, ref, mCallback);
+        holder.setToEntry(model, ref, callback);
     }
 
+    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_list_entry, parent, false);
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_entry, parent, false);
 
         return new ViewHolder(view);
     }
 
     @SuppressWarnings("WeakerAccess") // Class is needed public static for Firebase
-    public static class ViewHolder
-            extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView mvRoot;
-        private ItemClickCallback mCallback;
-        private DatabaseReference mReference;
+        private TextView textView;
+        private ItemClickCallback callback;
+        private DatabaseReference reference;
 
         public ViewHolder(View v) {
             super(v);
 
-            mvRoot = (TextView) v;
-            mvRoot.setOnClickListener(l_OnClick);
+            textView = (TextView) v;
+            textView.setOnClickListener(onClickListener);
         }
 
         private void setToEntry(Object entry, DatabaseReference ref, ItemClickCallback callback) {
-            mvRoot.setText(entry.toString());
-            mReference = ref;
-            mCallback = callback;
+            textView.setText(entry.toString());
+            reference = ref;
+            this.callback = callback;
         }
 
-        private final View.OnClickListener l_OnClick = new OnClickListener() {
+        private final View.OnClickListener onClickListener = new OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (mCallback != null) {
-                    mCallback.onItemClick(mReference);
+                if (callback != null) {
+                    callback.onItemClick(reference);
                 }
             }
         };

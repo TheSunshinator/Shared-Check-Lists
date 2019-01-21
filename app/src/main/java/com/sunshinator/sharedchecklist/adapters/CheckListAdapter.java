@@ -25,20 +25,18 @@ public class CheckListAdapter extends FirebaseRecyclerAdapter<CheckListEntry, Vi
 
     private static final String LOG_TAG = CheckListAdapter.class.getSimpleName();
 
-    private ItemClickCallback mCallback;
+    private ItemClickCallback callback;
 
     public CheckListAdapter(Query ref, ItemClickCallback callback) {
-
         super(new FirebaseRecyclerOptions.Builder<CheckListEntry>()
                 .setQuery(ref, CheckListEntry.class)
                 .build());
         Log.d(LOG_TAG, "CheckListAdapter: Ref: " + ref);
 
-        mCallback = callback;
+        this.callback = callback;
     }
 
     public List<String> getCheckedEntries() {
-
         List<String> list = new ArrayList<>();
 
         for (int i = 0; i < getItemCount(); i++) {
@@ -55,63 +53,56 @@ public class CheckListAdapter extends FirebaseRecyclerAdapter<CheckListEntry, Vi
     protected void onBindViewHolder(@NonNull ViewHolder holder, int position, @NonNull CheckListEntry model) {
         Log.d(LOG_TAG, "populateViewHolder: with entry: " + model.toString());
         DatabaseReference ref = getRef(position);
-        holder.setToEntry(model, ref, mCallback);
+        holder.setToEntry(model, ref, callback);
     }
 
+    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_list_entry, parent, false);
-
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_entry, parent, false);
         return new ViewHolder(view);
     }
 
     @SuppressWarnings("WeakerAccess") // Class is needed public static for Firebase
-    public static class ViewHolder
-            extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView mvRoot;
-        private CheckListEntry mEntry;
-        private ItemClickCallback mCallback;
-        private DatabaseReference mReference;
+        private TextView textView;
+        private CheckListEntry entryView;
+        private ItemClickCallback callback;
+        private DatabaseReference reference;
 
         public ViewHolder(View v) {
-
             super(v);
 
-            mvRoot = (TextView) v;
-            mvRoot.setOnClickListener(l_OnClick);
+            textView = (TextView) v;
+            textView.setOnClickListener(onClickListener);
         }
 
-        private void setToEntry(CheckListEntry entry, DatabaseReference ref,
-                                ItemClickCallback callback) {
+        private void setToEntry(CheckListEntry entry, DatabaseReference ref, ItemClickCallback callback) {
+            entryView = entry;
 
-            mEntry = entry;
-
-            if (mEntry != null) {
-                if (mEntry.isChecked()) {
-                    mvRoot.setPaintFlags(mvRoot.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            if (entryView != null) {
+                if (entryView.isChecked()) {
+                    textView.setPaintFlags(textView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                 } else {
-                    mvRoot.setPaintFlags(mvRoot.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
+                    textView.setPaintFlags(textView.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
                 }
 
-                mvRoot.setText(mEntry.getEntry());
+                textView.setText(entryView.getEntry());
             } else {
-                mvRoot.setText(null);
+                textView.setText(null);
             }
 
-            mReference = ref;
-            mCallback = callback;
+            reference = ref;
+            this.callback = callback;
         }
 
-        private final View.OnClickListener l_OnClick = new OnClickListener() {
+        private final View.OnClickListener onClickListener = new OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                if (mCallback != null) {
-                    mCallback.onItemClick(mReference, mEntry);
+                if (callback != null) {
+                    callback.onItemClick(reference, entryView);
                 }
-
             }
         };
     }

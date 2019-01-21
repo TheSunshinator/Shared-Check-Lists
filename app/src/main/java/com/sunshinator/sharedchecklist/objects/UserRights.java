@@ -2,6 +2,7 @@ package com.sunshinator.sharedchecklist.objects;
 
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.Exclude;
 import com.sunshinator.sharedchecklist.Constants;
@@ -11,99 +12,86 @@ import com.sunshinator.sharedchecklist.Constants;
  * <p>
  * Created by The Sunshinator on 19/04/2017.
  */
+@SuppressWarnings("WeakerAccess")
 public class UserRights {
 
-  public static final String FB_KEY_RIGHTS = "rights";
+    public static final String FB_KEY_RIGHTS = "rights";
 
-  @IntDef( value = {
-          Constants.INSTANCE.getMASK_RIGHT_REMOVE_USERS(),
-          Constants.INSTANCE.getMASK_RIGHT_ADD_ITEM(),
-          Constants.INSTANCE.getMASK_RIGHT_ADD_USERS(),
-          Constants.INSTANCE.getMASK_RIGHT_ALL(),
-          Constants.INSTANCE.getMASK_RIGHT_CHECK(),
-          Constants.INSTANCE.getMASK_RIGHT_CLEAN(),
-          Constants.INSTANCE.getMASK_RIGHT_DELETE(),
-          Constants.INSTANCE.getMASK_RIGHT_SEE()
-  })
-  public @interface Mask{}
-
-  private int    mRights = 0;
-  private String mId     = null;
-
-  public static UserRights parse( @NonNull DataSnapshot snapshot ) {
-
-    UserRights instance = new UserRights();
-    instance.mId = snapshot.getKey().replaceAll( ",", "." );
-
-    if ( snapshot.child( FB_KEY_RIGHTS ).exists() ) {
-
-      instance.mRights = snapshot.child( FB_KEY_RIGHTS ).getValue( Integer.class );
-
+    @IntDef(value = {
+            Constants.MASK_RIGHT_REMOVE_USERS,
+            Constants.MASK_RIGHT_ADD_ITEM,
+            Constants.MASK_RIGHT_ADD_USERS,
+            Constants.MASK_RIGHT_ALL,
+            Constants.MASK_RIGHT_CHECK,
+            Constants.MASK_RIGHT_CLEAN,
+            Constants.MASK_RIGHT_DELETE,
+            Constants.MASK_RIGHT_SEE
+    })
+    public @interface Mask {
     }
 
-    return instance;
-  }
+    private int rights = 0;
+    private String uid = null;
 
-  public UserRights() {}
+    public static UserRights parse(@NonNull DataSnapshot snapshot) {
+        UserRights instance = new UserRights();
+        //noinspection ConstantConditions
+        instance.uid = snapshot.getKey().replaceAll(",", ".");
 
+        if (snapshot.child(FB_KEY_RIGHTS).exists()) {
+            //noinspection ConstantConditions
+            instance.rights = snapshot.child(FB_KEY_RIGHTS).getValue(Integer.class);
+        }
 
-  public UserRights( @NonNull String email, @Mask int rights ) {
-    setId( email );
-    mRights = rights;
-  }
-
-  @Override
-  public boolean equals( Object obj ) {
-
-    if ( obj instanceof UserRights ) {
-      UserRights userRights = (UserRights) obj;
-
-      return mId == null
-             ? userRights.mId == null
-             : mId.equals( userRights.mId );
-    } else {
-      return false;
+        return instance;
     }
 
-  }
+    public UserRights() {}
 
-  @Override
-  public int hashCode() {
+    public UserRights(@NonNull String email, @Mask int rights) {
+        setId(email);
+        this.rights = rights;
+    }
 
-    return mId.hashCode();
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof UserRights) {
+            UserRights userRights = (UserRights) obj;
 
-  }
+            return uid == null
+                    ? userRights.uid == null
+                    : uid.equals(userRights.uid);
+        } else {
+            return false;
+        }
+    }
 
-  @Override
-  public String toString() {
+    @Override
+    public int hashCode() {
+        return uid.hashCode();
+    }
 
-    return mId.replaceAll( ",", "." );
-  }
+    @NonNull
+    @Override
+    public String toString() {
+        return uid.replaceAll(",", ".");
+    }
 
-  // ----- ----- ----- ----- ----- ----- //
-  // region // ----- - Getters and Setters - ----- //
-  public int getRights() {
+    public int getRights() {
+        return rights;
+    }
 
-    return mRights;
-  }
+    public void setRights(int rights) {
+        this.rights = rights;
+    }
 
-  public void setRights( int rights ) {
+    @Exclude
+    public String getId() {
+        return uid;
+    }
 
-    mRights = rights;
-  }
-
-  @Exclude
-  public String getId() {
-
-    return mId;
-  }
-
-  @Exclude
-  public void setId( String id ) {
-
-    mId = id.replaceAll( "\\.", "," );
-  }
-  // endregion
-  // ----- ----- ----- ----- ----- ----- //
-
+    @Exclude
+    public void setId(String id) {
+        uid = id.replaceAll("\\.", ",");
+    }
 }

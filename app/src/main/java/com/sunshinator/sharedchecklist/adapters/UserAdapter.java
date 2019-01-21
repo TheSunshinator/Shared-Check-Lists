@@ -29,7 +29,7 @@ public class UserAdapter extends FirebaseRecyclerAdapter<UserRights, ViewHolder>
 
     private static final String LOG_TAG = CheckListAdapter.class.getSimpleName();
 
-    private List<UserRights> mSelected = new ArrayList<>();
+    private List<UserRights> selectedRights = new ArrayList<>();
 
     public UserAdapter(Query ref) {
         super(new FirebaseRecyclerOptions.Builder<UserRights>()
@@ -40,14 +40,14 @@ public class UserAdapter extends FirebaseRecyclerAdapter<UserRights, ViewHolder>
     }
 
     public List<UserRights> getCheckedEntries() {
-        return mSelected;
+        return selectedRights;
     }
 
-    private final ItemClickCallback l_ItemClicked = new ItemClickCallback() {
+    private final ItemClickCallback onItemClickedListener = new ItemClickCallback() {
         @Override
         public void onItemClick(UserRights entry) {
-            if (!mSelected.remove(entry)) {
-                mSelected.add(entry);
+            if (!selectedRights.remove(entry)) {
+                selectedRights.add(entry);
             }
         }
     };
@@ -57,74 +57,68 @@ public class UserAdapter extends FirebaseRecyclerAdapter<UserRights, ViewHolder>
         DatabaseReference ref = getRef(position);
         model.setId(ref.getKey());
         Log.d(LOG_TAG, "populateViewHolder: with entry: " + model.toString());
-        holder.setToEntry(model, ref, l_ItemClicked);
+        holder.setToEntry(model, ref, onItemClickedListener);
     }
 
+    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_list_entry, parent, false);
-
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_entry, parent, false);
         return new ViewHolder(view);
     }
 
     @SuppressWarnings("WeakerAccess") // Class is needed public static for Firebase
-    public static class ViewHolder
-            extends RecyclerView.ViewHolder {
+    public static class ViewHolder extends RecyclerView.ViewHolder {
 
-        private TextView mvRoot;
-        private UserRights mEntry;
-        private DatabaseReference mReference;
-        private ItemClickCallback mCallback;
+        private TextView textView;
+        private UserRights entry;
+        private DatabaseReference reference;
+        private ItemClickCallback callback;
 
         public ViewHolder(View v) {
-
             super(v);
 
-            mvRoot = (TextView) v;
-            mvRoot.setOnClickListener(l_OnClick);
+            textView = (TextView) v;
+            textView.setOnClickListener(onClickListener);
         }
 
         private void setToEntry(UserRights entry, DatabaseReference ref, ItemClickCallback callback) {
+            this.entry = entry;
 
-            mEntry = entry;
-
-            if (mEntry != null) {
-                if ((mEntry.getRights() & Constants.MASK_RIGHT_SEE) != Constants.MASK_RIGHT_SEE) {
-                    mvRoot.setPaintFlags(mvRoot.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            if (this.entry != null) {
+                if ((this.entry.getRights() & Constants.MASK_RIGHT_SEE) != Constants.MASK_RIGHT_SEE) {
+                    textView.setPaintFlags(textView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
                 } else {
-                    mvRoot.setPaintFlags(mvRoot.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
+                    textView.setPaintFlags(textView.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
                 }
 
-                mvRoot.setText(mEntry.toString());
+                textView.setText(this.entry.toString());
             } else {
-                mvRoot.setText(null);
+                textView.setText(null);
             }
 
-            mReference = ref;
-            mCallback = callback;
+            reference = ref;
+            this.callback = callback;
         }
 
-        private final View.OnClickListener l_OnClick = new OnClickListener() {
+        private final View.OnClickListener onClickListener = new OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 FirebaseUser auth = FirebaseAuth.getInstance().getCurrentUser();
 
-                if (mEntry.getId() == null
+                if (entry.getId() == null
                         || auth == null
                         || auth.getEmail() == null
-                        || mEntry.toString().equals(auth.getEmail())) {
-                    Toast.makeText(mvRoot.getContext(), R.string.warn_delete_self, Toast.LENGTH_LONG)
+                        || entry.toString().equals(auth.getEmail())) {
+                    Toast.makeText(textView.getContext(), R.string.warn_delete_self, Toast.LENGTH_LONG)
                             .show();
                     return;
                 }
 
-                mEntry.setRights(
-                        (mEntry.getRights() & Constants.MASK_RIGHT_SEE) ^ Constants.MASK_RIGHT_SEE);
-                setToEntry(mEntry, mReference, mCallback);
+                entry.setRights((entry.getRights() & Constants.MASK_RIGHT_SEE) ^ Constants.MASK_RIGHT_SEE);
+                setToEntry(entry, reference, callback);
 
-                mCallback.onItemClick(mEntry);
+                callback.onItemClick(entry);
             }
         };
     }

@@ -11,7 +11,6 @@ import com.firebase.ui.auth.AuthUI;
 import com.firebase.ui.auth.ErrorCodes;
 import com.firebase.ui.auth.IdpResponse;
 import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.crash.FirebaseCrash;
 import com.sunshinator.sharedchecklist.BuildConfig;
 import com.sunshinator.sharedchecklist.R;
 
@@ -21,16 +20,16 @@ public class SplashScreen extends AppCompatActivity {
 
     public static final int RC_SIGN_IN = 1;
 
-    private TextView mvErrorMessage;
-    private View mvRetry;
+    private TextView errorMessageView;
+    private View retryCta;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash_screen);
 
-        mvErrorMessage = findViewById(R.id.error);
-        mvRetry = findViewById(R.id.retry);
+        errorMessageView = findViewById(R.id.error);
+        retryCta = findViewById(R.id.retry);
 
         FirebaseAuth auth = FirebaseAuth.getInstance();
         if (auth.getCurrentUser() != null) {
@@ -55,29 +54,21 @@ public class SplashScreen extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // RC_SIGN_IN is the request code you passed into startActivityForResult(...) when starting the sign in flow.
         if (requestCode == RC_SIGN_IN) {
             IdpResponse response = IdpResponse.fromResultIntent(data);
 
-            Log.d(LOG_TAG, "onActivityResult: Login response: "
-                    + (response == null ? null : response.toString()));
+            Log.d(LOG_TAG, "onActivityResult: Login response: " + (response == null ? null : response.toString()));
 
-            // Successfully signed in
             if (resultCode == RESULT_OK) {
                 onLoggedIn();
             } else if (response == null) {
                 finish();
-            } else if (response.getErrorCode() == ErrorCodes.NO_NETWORK) {
-                mvErrorMessage.setText(R.string.message_login_network);
-                mvRetry.setVisibility(View.VISIBLE);
+            } else if (response.getError() != null && response.getError().getErrorCode() == ErrorCodes.NO_NETWORK) {
+                errorMessageView.setText(R.string.message_login_network);
+                retryCta.setVisibility(View.VISIBLE);
             } else {
-                mvErrorMessage.setText(R.string.message_login_unknown);
-                mvRetry.setVisibility(View.VISIBLE);
-
-                if (!BuildConfig.DEBUG) {
-                    FirebaseCrash.report(new IllegalStateException(
-                            "Could not login. Login result code: " + response.getErrorCode()));
-                }
+                errorMessageView.setText(R.string.message_login_unknown);
+                retryCta.setVisibility(View.VISIBLE);
             }
         }
     }
@@ -96,8 +87,4 @@ public class SplashScreen extends AppCompatActivity {
                         .setIsSmartLockEnabled(!BuildConfig.DEBUG)
                         .build(), RC_SIGN_IN);
     }
-
-    // TODO Logout button
-    // TODO Change Firebase's rules
-    // TODO: 20/04/2017 Adjust layouts to landscape mode
 }

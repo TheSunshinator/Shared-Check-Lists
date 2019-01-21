@@ -1,107 +1,94 @@
 package com.sunshinator.sharedchecklist.objects;
 
+import android.support.annotation.NonNull;
+
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.Exclude;
 
-@SuppressWarnings( "WeakerAccess" )
+@SuppressWarnings("WeakerAccess")
 public class CheckListEntry {
 
-  public static final String FB_KEY_ENTRY   = "entry";
-  public static final String FB_KEY_CHECKED = "checkedBy";
+    public static final String FB_KEY_ENTRY = "entry";
+    public static final String FB_KEY_CHECKED = "checkedBy";
 
-  private String mEntry     = null;
-  private String mCheckedBy = null;
-  private String mUid       = null;
+    private String entry = null;
+    private String checkerEmail = null;
+    private String uid = null;
 
-  public static CheckListEntry parse( DataSnapshot snapshot ) {
+    public static CheckListEntry parse(DataSnapshot snapshot) {
+        CheckListEntry instance = new CheckListEntry();
 
-    CheckListEntry instance = new CheckListEntry();
+        instance.uid = snapshot.getKey();
+        instance.entry = snapshot.child(FB_KEY_ENTRY).getValue(String.class);
+        instance.checkerEmail = snapshot.child(FB_KEY_CHECKED).getValue(String.class);
 
-    instance.mUid = snapshot.getKey();
-    instance.mEntry = snapshot.child( FB_KEY_ENTRY ).getValue( String.class );
-    instance.mCheckedBy = snapshot.child( FB_KEY_CHECKED ).getValue( String.class );
+        return instance;
+    }
 
-    return instance;
-  }
+    public CheckListEntry() { }
+    public CheckListEntry(String entry, String checkedBy) {
+        this.entry = entry;
+        checkerEmail = checkedBy;
+    }
 
-  public CheckListEntry() {}
+    public CheckListEntry(String entry) {
+        this.entry = entry;
+    }
 
-  public CheckListEntry( String entry, String checkedBy ) {
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof CheckListEntry) {
 
-    mEntry = entry;
-    mCheckedBy = checkedBy;
-  }
+            CheckListEntry subject = (CheckListEntry) obj;
+            return entry == null
+                    ? subject.entry == null
+                    : entry.equals(subject.entry);
 
-  public CheckListEntry( String entry ) {
+        } else {
+            return false;
+        }
+    }
 
-    mEntry = entry;
-  }
+    @Override
+    public int hashCode() {
 
-  @Override
-  public boolean equals( Object obj ) {
+        return entry.hashCode();
+    }
 
-    if ( obj instanceof CheckListEntry ) {
+    @NonNull
+    @Override
+    public String toString() {
+        return (checkerEmail != null ? "[x] " : "[ ] ") + entry;
+    }
 
-      CheckListEntry subject = (CheckListEntry) obj;
-      return mEntry == null
-             ? subject.mEntry == null
-             : mEntry.equals( subject.mEntry );
+    @Exclude
+    public boolean isChecked() {
+        return checkerEmail != null;
+    }
 
-    } else { return false; }
-  }
+    public String getEntry() {
+        return entry;
+    }
 
-  @Override
-  public int hashCode() {
+    public void setEntry(String entry) {
+        this.entry = entry;
+    }
 
-    return mEntry.hashCode();
-  }
+    public String getCheckedBy() {
+        return checkerEmail;
+    }
 
-  @Override
-  public String toString() {
+    public void setCheckedBy(String checkedBy) {
+        checkerEmail = checkedBy;
+    }
 
-    return ( mCheckedBy != null? "[x] " : "[ ] " ) + mEntry;
-  }
+    @Exclude
+    public String getUid() {
+        return uid;
+    }
 
-  @Exclude
-  public boolean isChecked() {
-
-    return mCheckedBy != null;
-  }
-
-  // ----- ----- ----- ----- ----- ----- //
-  // region // ----- - Getters and Setters - ----- //
-  public String getEntry() {
-
-    return mEntry;
-  }
-
-  public void setEntry( String entry ) {
-
-    this.mEntry = entry;
-  }
-
-  public String getCheckedBy() {
-
-    return mCheckedBy;
-  }
-
-  public void setCheckedBy( String checkedBy ) {
-
-    mCheckedBy = checkedBy;
-  }
-
-  @Exclude
-  public String getUid() {
-
-    return mUid;
-  }
-
-  @Exclude
-  public void setUid( String uid ) {
-
-    mUid = uid;
-  }
-
-  // endregion
-  // ----- ----- ----- ----- ----- ----- //
+    @Exclude
+    public void setUid(String uid) {
+        this.uid = uid;
+    }
 }

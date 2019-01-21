@@ -6,9 +6,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.ActionBarDrawerToggle;
+import android.support.annotation.NonNull;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.MenuItem;
@@ -39,8 +40,7 @@ import com.sunshinator.sharedchecklist.objects.CheckList;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SharedCheckList
-        extends ConnectedActivity {
+public class SharedCheckList extends ConnectedActivity {
 
     private static final String LOG_TAG = SharedCheckList.class.getSimpleName();
 
@@ -54,27 +54,27 @@ public class SharedCheckList
 
     private static final String FB_FORMAT_LIST_RIGHTS = FB_KEY_USERS + "/%s/" + FB_KEY_RIGHTS;
 
-    private TextView mvMessage;
-    private View mvLoad;
-    private View mvRetry;
-    private View mvFragment;
-    private EditText mvName;
-    private RecyclerView mvListList;
+    private TextView message;
+    private View loadingView;
+    private View retryCta;
+    private View contentFragment;
+    private EditText nameEntry;
+    private RecyclerView listRecyclerView;
 
-    private LinearLayout mDrawer;
-    private DrawerLayout mDrawerLayout;
+    private LinearLayout drawerView;
+    private DrawerLayout drawerLayout;
 
-    private ActionBarDrawerToggle mDrawerToggle;
+    private ActionBarDrawerToggle drawerToggle;
 
-    private Query mListsQuery;
-    private ListFragment mFragment;
+    private Query listsQuery;
+    private ListFragment listFragment;
 
-    private Dialog mNewListDialog;
-    private Dialog mChangeListDialog;
+    private Dialog newListDialog;
+    private Dialog changeListDialog;
 
-    private StringAdapter<CheckList> mAdapter;
+    private StringAdapter<CheckList> adapter;
 
-    private Map<String, CheckList> mCheckLists;
+    private Map<String, CheckList> checkLists;
 
     private enum State {
         LOADING, ERROR, READY
@@ -88,80 +88,23 @@ public class SharedCheckList
         initViews();
         initDialogs();
 
-        mCheckLists = new HashMap<>();
-        mFragment = (ListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
+        checkLists = new HashMap<>();
+        listFragment = (ListFragment) getSupportFragmentManager().findFragmentById(R.id.fragment);
 
         initActionBar();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        adjustViewsVisibility(State.LOADING);
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        mListsQuery.removeEventListener(l_Lists);
-
-        if(mAdapter != null) mAdapter.stopListening();
-
-        mCheckLists.clear();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        return mDrawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    protected void onConnect() {
-        Log.d(LOG_TAG, "onConnect");
-
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-        if (user != null) {
-            initQuery(user);
-            mListsQuery.addValueEventListener(l_Lists);
-            mAdapter = new StringAdapter<>(CheckList.class, mListsQuery, l_ListSelected);
-            mAdapter.startListening();
-            mvListList.setAdapter(mAdapter);
-        } else {
-            onUnauthenticated();
-        }
-    }
-
-    @Override
-    protected void onDisconnect() {
-        mListsQuery.removeEventListener(l_Lists);
-        mCheckLists.clear();
-
-        mvMessage.setText(R.string.err_network);
-        adjustViewsVisibility(State.ERROR);
-    }
-
-    @Override
-    protected void onUnauthenticated() {
-        mListsQuery.removeEventListener(l_Lists);
-        mCheckLists.clear();
-
-        mvMessage.setText(R.string.err_auth);
-        adjustViewsVisibility(State.ERROR);
-    }
-
     private void initViews() {
-        mDrawerLayout = findViewById(R.id.root);
-        mDrawer = findViewById(R.id.drawer);
-        mvLoad = findViewById(R.id.load);
-        mvRetry = findViewById(R.id.retry);
-        mvFragment = findViewById(R.id.fragment);
-        mvMessage = findViewById(R.id.message);
+        drawerLayout = findViewById(R.id.root);
+        drawerView = findViewById(R.id.drawer);
+        loadingView = findViewById(R.id.load);
+        retryCta = findViewById(R.id.retry);
+        contentFragment = findViewById(R.id.fragment);
+        message = findViewById(R.id.message);
 
-        mDrawerToggle = new ActionBarDrawerToggle(this, mDrawerLayout, R.string.desc_open_drawer,
-                R.string.desc_close_drawer);
+        drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, R.string.desc_open_drawer, R.string.desc_close_drawer);
 
-        mDrawerLayout.addDrawerListener(mDrawerToggle);
+        drawerLayout.addDrawerListener(drawerToggle);
     }
 
     private void initDialogs() {
@@ -170,31 +113,22 @@ public class SharedCheckList
     }
 
     private void initNewListDialog() {
-        mNewListDialog = new Dialog(this);
-        mNewListDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        mNewListDialog.setContentView(R.layout.dialog_new_list);
+        newListDialog = new Dialog(this);
+        newListDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        newListDialog.setContentView(R.layout.dialog_new_list);
 
-        mvName = mNewListDialog.findViewById(R.id.name);
+        nameEntry = newListDialog.findViewById(R.id.name);
 
-        View vSubmit = mNewListDialog.findViewById(R.id.submit);
-        vSubmit.setOnClickListener(l_SubmitList);
+        View vSubmit = newListDialog.findViewById(R.id.submit);
+        vSubmit.setOnClickListener(submitListClicked);
     }
 
     private void initChangeListDialog() {
-        mChangeListDialog = new Dialog(this);
-        mChangeListDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        mChangeListDialog.setContentView(R.layout.dialog_select_list);
+        changeListDialog = new Dialog(this);
+        changeListDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        changeListDialog.setContentView(R.layout.dialog_select_list);
 
-        mvListList = mChangeListDialog.findViewById(R.id.list);
-    }
-
-    private void initQuery(FirebaseUser user) {
-        @SuppressWarnings("ConstantConditions")
-        String email = user.getEmail().replaceAll(REGEX_DOT, REGEX_COMMA);
-
-        mListsQuery = FirebaseDatabase.getInstance().getReference().child(Constants.FB_BASE_PATH);
-        mListsQuery = mListsQuery.orderByChild(String.format(FB_FORMAT_LIST_RIGHTS, email))
-                .startAt(Constants.MASK_RIGHT_SEE);
+        listRecyclerView = changeListDialog.findViewById(R.id.list);
     }
 
     private void initActionBar() {
@@ -205,11 +139,76 @@ public class SharedCheckList
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        adjustViewsVisibility(State.LOADING);
+    }
+
     private void adjustViewsVisibility(State state) {
-        mvLoad.setVisibility(state == State.LOADING ? View.VISIBLE : View.GONE);
-        mvFragment.setVisibility(state == State.READY ? View.VISIBLE : View.GONE);
-        mvMessage.setVisibility(state == State.ERROR ? View.VISIBLE : View.GONE);
-        mvRetry.setVisibility(state == State.ERROR ? View.VISIBLE : View.GONE);
+        loadingView.setVisibility(state == State.LOADING ? View.VISIBLE : View.GONE);
+        contentFragment.setVisibility(state == State.READY ? View.VISIBLE : View.GONE);
+        message.setVisibility(state == State.ERROR ? View.VISIBLE : View.GONE);
+        retryCta.setVisibility(state == State.ERROR ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        listsQuery.removeEventListener(listsFetchedListener);
+
+        if (adapter != null) adapter.stopListening();
+
+        checkLists.clear();
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        return drawerToggle.onOptionsItemSelected(item) || super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onConnect() {
+        Log.d(LOG_TAG, "onConnect");
+
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user != null) {
+            initQuery(user);
+            listsQuery.addValueEventListener(listsFetchedListener);
+            adapter = new StringAdapter<>(CheckList.class, listsQuery, l_ListSelected);
+            adapter.startListening();
+            listRecyclerView.setAdapter(adapter);
+        } else {
+            onUnauthenticated();
+        }
+    }
+
+    @Override
+    protected void onDisconnect() {
+        listsQuery.removeEventListener(listsFetchedListener);
+        checkLists.clear();
+
+        message.setText(R.string.err_network);
+        adjustViewsVisibility(State.ERROR);
+    }
+
+    @Override
+    protected void onUnauthenticated() {
+        listsQuery.removeEventListener(listsFetchedListener);
+        checkLists.clear();
+
+        message.setText(R.string.err_auth);
+        adjustViewsVisibility(State.ERROR);
+    }
+
+    private void initQuery(FirebaseUser user) {
+        @SuppressWarnings("ConstantConditions")
+        String email = user.getEmail().replaceAll(REGEX_DOT, REGEX_COMMA);
+
+        listsQuery = FirebaseDatabase.getInstance().getReference().child(Constants.FB_BASE_PATH)
+                .orderByChild(String.format(FB_FORMAT_LIST_RIGHTS, email))
+                .startAt(Constants.MASK_RIGHT_SEE);
     }
 
     @SuppressLint("ApplySharedPref")
@@ -221,7 +220,7 @@ public class SharedCheckList
     }
 
     private void setLayoutTo(CheckList list) {
-        mFragment.setToList(list);
+        listFragment.setToList(list);
         setTitle(list == null ? getString(R.string.app_name) : list.getName());
         saveDisplayedList(list == null ? null : list.getUid());
     }
@@ -237,23 +236,23 @@ public class SharedCheckList
     }
 
     public void onChangeList(View v) {
-        if (mAdapter.getItemCount() <= 1) {
+        if (adapter.getItemCount() <= 1) {
             Toast.makeText(this, R.string.warn_empty_list_choice, Toast.LENGTH_LONG).show();
         } else {
-            mDrawerLayout.closeDrawer(mDrawer);
-            mChangeListDialog.show();
+            drawerLayout.closeDrawer(drawerView);
+            changeListDialog.show();
         }
     }
 
     public void onNewList(View v) {
-        mDrawerLayout.closeDrawer(mDrawer);
-        mNewListDialog.show();
+        drawerLayout.closeDrawer(drawerView);
+        newListDialog.show();
     }
 
-    private final OnClickListener l_SubmitList = new OnClickListener() {
+    private final OnClickListener submitListClicked = new OnClickListener() {
         @Override
         public void onClick(View view) {
-            String name = mvName.getText().toString();
+            String name = nameEntry.getText().toString();
             String email = getUserEmail();
 
             if (name.length() <= 0) {
@@ -268,47 +267,47 @@ public class SharedCheckList
             CheckList newList = new CheckList(name, email);
             newList.setName(name);
 
-            final DatabaseReference newRef = mListsQuery.getRef().push();
+            final DatabaseReference newRef = listsQuery.getRef().push();
             saveDisplayedList(newRef.getKey());
-            newRef.setValue(newList, l_Completion);
+            newRef.setValue(newList, fbValueSetCompletedListener);
         }
     };
 
-    private final CompletionListener l_Completion = new CompletionListener() {
+    private final CompletionListener fbValueSetCompletedListener = new CompletionListener() {
         @Override
-        public void onComplete(DatabaseError databaseError, DatabaseReference databaseReference) {
+        public void onComplete(DatabaseError databaseError, @NonNull DatabaseReference databaseReference) {
             if (databaseError != null) {
                 Log.e(LOG_TAG, "onComplete", databaseError.toException());
                 Toast.makeText(SharedCheckList.this, R.string.err_network, Toast.LENGTH_LONG).show();
             } else {
-                mNewListDialog.dismiss();
-                mvName.setText(null);
+                newListDialog.dismiss();
+                nameEntry.setText(null);
             }
         }
     };
 
-    private final ValueEventListener l_Lists = new ValueEventListener() {
+    private final ValueEventListener listsFetchedListener = new ValueEventListener() {
         @Override
         public void onDataChange(DataSnapshot dataSnapshot) {
-            mCheckLists.clear();
+            checkLists.clear();
 
             for (DataSnapshot list : dataSnapshot.getChildren()) {
                 final CheckList parsed = CheckList.parse(list);
-                mCheckLists.put(parsed.getUid(), parsed);
+                checkLists.put(parsed.getUid(), parsed);
             }
 
             SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(SharedCheckList.this);
             String listToShow = sp.getString(PREF_LIST_UID, null);
 
-            CheckList shownList = mFragment.getCheckList();
-            if (mCheckLists.containsKey(listToShow)) {
-                setLayoutTo(mCheckLists.get(listToShow));
-            } else if (shownList != null && mCheckLists.containsKey(mFragment.getCheckList().getUid())) {
-                setLayoutTo(mCheckLists.get(mFragment.getCheckList().getUid()));
-            } else if (mCheckLists.keySet().size() <= 0) {
+            CheckList shownList = listFragment.getCheckList();
+            if (checkLists.containsKey(listToShow)) {
+                setLayoutTo(checkLists.get(listToShow));
+            } else if (shownList != null && checkLists.containsKey(listFragment.getCheckList().getUid())) {
+                setLayoutTo(checkLists.get(listFragment.getCheckList().getUid()));
+            } else if (checkLists.keySet().size() <= 0) {
                 setLayoutTo(null);
             } else {
-                setLayoutTo(mCheckLists.get(mCheckLists.keySet().iterator().next()));
+                setLayoutTo(checkLists.get(checkLists.keySet().iterator().next()));
             }
 
             adjustViewsVisibility(State.READY);
@@ -316,10 +315,8 @@ public class SharedCheckList
 
         @Override
         public void onCancelled(DatabaseError databaseError) {
-
             Log.w(LOG_TAG, "onCancelled: Database error", databaseError.toException());
             onDisconnect();
-
         }
     };
 
@@ -327,10 +324,9 @@ public class SharedCheckList
         @Override
         public void onItemClick(DatabaseReference ref) {
             String uid = ref.getKey();
-            setLayoutTo(mCheckLists.get(uid));
+            setLayoutTo(checkLists.get(uid));
 
-            mChangeListDialog.dismiss();
+            changeListDialog.dismiss();
         }
     };
-
 }

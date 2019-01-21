@@ -9,6 +9,7 @@
       android:supportsRtl = "true"
       android:name=".SharedCheckListsApp"
       android:theme = "@style/AppTheme">
+
         <activity android:name = "com.sunshinator.sharedchecklist.activities.SharedCheckList"/>
         <activity
           android:name = "com.sunshinator.sharedchecklist.activities.SplashScreen"
